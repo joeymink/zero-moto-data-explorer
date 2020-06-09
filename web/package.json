@@ -1,0 +1,11 @@
+{
+  "name": "zero-moto-data-explorer",
+  "version": "0.0.1",
+  "description": "Explore parsed log data from Zero Motorcycles",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "joey@joeymink.com",
+  "license": "MIT"
+}
