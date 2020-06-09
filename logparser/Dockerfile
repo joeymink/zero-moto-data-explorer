@@ -18,5 +18,5 @@ RUN git clone https://github.com/zero-motorcycle-community/zero-log-data-extract
 
 COPY ./scripts/jsonify-bike-logs.sh /app/jsonify-bike-logs.sh
 
-CMD ['jsonify-bike-logs.sh']
+CMD ["./jsonify-bike-logs.sh"]
 
