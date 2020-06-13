@@ -3,7 +3,6 @@ FROM python:3.8-alpine
 RUN apk update
 
 RUN apk add git
-RUN apk add sqlite
 
 RUN mkdir /app
 WORKDIR /app

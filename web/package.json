@@ -4,8 +4,12 @@
   "description": "Explore parsed log data from Zero Motorcycles",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "ingest": "node index.js ingest"
   },
   "author": "joey@joeymink.com",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "mongodb": "^3.5.8"
+  }
 }
