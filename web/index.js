@@ -76,12 +76,12 @@ const ingestFile = (db, file, jsonLogPath) => {
 			return new Promise((resolve, reject) => {
 				// TODO: only allow inserting a given filename once.
 				db.collection('rawfiles').insertOne({name: file}, (err, inserted) => {
-					resolve(inserted);
+					resolve(inserted.insertedId);
 				});
 			});
 		};
 
-		const readFile = (rawFile) => {
+		const readFile = (rawFileId) => {
 			return new Promise((resolve, reject) => {
 				// TODO: Move to a streaming JSON file reader
 				const options = { encoding: 'utf8'};
@@ -89,49 +89,49 @@ const ingestFile = (db, file, jsonLogPath) => {
 				content = JSON.parse(content);
 				console.log(`-- Found ${content.entries.length} entries`);
 
-				resolve({rawFile, rawFile, fileContent: content});
+				resolve({rawFileId, fileContent: content});
 			});
 		};
 
-		const insertHeader = ({rawFile, fileContent}) => {
+		const insertHeader = ({rawFileId, fileContent}) => {
 			return new Promise((resolve, reject) => {
 				const toInsert = Object.assign(
-					{}, fileContent.header, {rawFileId: rawFile._id}
+					{}, fileContent.header, {rawFileId: rawFileId}
 				);
 				db.collection('rawheaders').insertOne(toInsert, (err, inserted) => {
 					if (err) {
 						reject(err);
 					}
-					resolve({rawFile, fileContent});
+					resolve({rawFileId, fileContent});
 				});
 			});
 		};
 
-		const insertModel = ({rawFile, fileContent}) => {
+		const insertModel = ({rawFileId, fileContent}) => {
 			return new Promise((resolve, reject) => {
 				const toInsert = Object.assign(
-					{}, fileContent.model, {rawFileId: rawFile._id}
+					{}, fileContent.model, {rawFileId: rawFileId}
 				);
 				db.collection('rawmodels').insertOne(toInsert, (err, inserted) => {
 					if (err) {
 						reject(err);
 					}
-					resolve({rawFile, fileContent});
+					resolve({rawFileId, fileContent});
 				});
 			});
 		};
 
-		const insertEntries = ({rawFile, fileContent}) => {
+		const insertEntries = ({rawFileId, fileContent}) => {
 			return new Promise((resolve, reject) => {
 				fileContent.entries.forEach((entry) => {
-					entry.rawFileId = rawFile._id;
+					entry.rawFileId = rawFileId;
 				});
 				db.collection('rawentries').insertMany(
 					fileContent.entries, {}, (err, result) => {
 						if (err) {
 							reject(err);
 						}
-						resolve({rawFile, fileContent});
+						resolve({rawFileId, fileContent});
 				});
 			});
 		};
