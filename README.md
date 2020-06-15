@@ -20,3 +20,12 @@ Constantly changing, but at this point...
 
 ### Run the ingestion process
 1. `docker-compose -f compose-local.yml run web`
+
+The above steps get the raw bike log data into the following MongoDB collections:
+
+```
+rawfiles
+rawheaders
+rawmodels
+rawentries
+```
