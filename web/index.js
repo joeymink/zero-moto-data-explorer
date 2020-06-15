@@ -14,8 +14,6 @@ const main = () => {
 	};
 
 	connectToDatabase().then(
-		initDatabase
-	).then(
 		ingest
 	).then(
 		() => {
@@ -42,45 +40,114 @@ const connectToDatabase = () => {
 };
 
 /**
- * Initializes the MongoDB database with collections
- * we need for ingesting raw JSON log data.
- */
-const initDatabase = (db) => {
-	return new Promise((resolve, reject) => {
-		const collections = db.collections();
-/*
-		['filenames', 'headers', 'models', 'entries'].forEach((name) => {
-			if (!collections.map(c => c.s.name).includes(name)) {
-		    db.createCollection(name); // TODO: make async
-			}
-		});
-*/
-		resolve(db);
-	});
-};
-
-/**
  * Ingests the .bin files in the json-logs folder
  */
 const ingest = (db) => {
 	return new Promise((resolve, reject) => {
 		const jsonLogPath = '/app/json-logs/';
 
+		const files = [];
 		fs.readdirSync(jsonLogPath).forEach(function(file){
 		  if (!file.endsWith('.json')){
 		  	return;
 		  } else {
-		  	console.log(`Ingesting ${file} ...`);
-
-		  	// TODO: Move to a streaming JSON file reader
-		  	const options = { encoding: 'utf8'};
-		  	let content = fs.readFileSync(`${jsonLogPath}/${file}`, options);
-		  	content = JSON.parse(content);
-		  	console.log(`Found ${content.entries.length} entries in ${file}!`);
+		  	console.log(`Found ${file}`);
+		  	files.push(file);
 		  }
 		});
 
-		resolve();
+		const ingestFns = files.map((file) => (
+			() => (ingestFile(db, file, jsonLogPath))
+		)); 
+
+		ingestFns.reduce((prev, curr) => {
+			return prev.then(curr);
+		}, Promise.resolve(1) /*< TODO: */)
+		.then(function (result) {
+			console.log('Ingestion complete.');
+		  resolve();
+		}).catch((err) => {reject(err)});
+	});
+};
+
+const ingestFile = (db, file, jsonLogPath) => {
+	return new Promise((resolve, reject) => {
+		const insertFile = () => {
+			return new Promise((resolve, reject) => {
+				// TODO: only allow inserting a given filename once.
+				db.collection('rawfiles').insertOne({name: file}, (err, inserted) => {
+					resolve(inserted);
+				});
+			});
+		};
+
+		const readFile = (rawFile) => {
+			return new Promise((resolve, reject) => {
+				// TODO: Move to a streaming JSON file reader
+				const options = { encoding: 'utf8'};
+				let content = fs.readFileSync(`${jsonLogPath}/${file}`, options);
+				content = JSON.parse(content);
+				console.log(`-- Found ${content.entries.length} entries`);
+
+				resolve({rawFile, rawFile, fileContent: content});
+			});
+		};
+
+		const insertHeader = ({rawFile, fileContent}) => {
+			return new Promise((resolve, reject) => {
+				const toInsert = Object.assign(
+					{}, fileContent.header, {rawFileId: rawFile._id}
+				);
+				db.collection('rawheaders').insertOne(toInsert, (err, inserted) => {
+					if (err) {
+						reject(err);
+					}
+					resolve({rawFile, fileContent});
+				});
+			});
+		};
+
+		const insertModel = ({rawFile, fileContent}) => {
+			return new Promise((resolve, reject) => {
+				const toInsert = Object.assign(
+					{}, fileContent.model, {rawFileId: rawFile._id}
+				);
+				db.collection('rawmodels').insertOne(toInsert, (err, inserted) => {
+					if (err) {
+						reject(err);
+					}
+					resolve({rawFile, fileContent});
+				});
+			});
+		};
+
+		const insertEntries = ({rawFile, fileContent}) => {
+			return new Promise((resolve, reject) => {
+				fileContent.entries.forEach((entry) => {
+					entry.rawFileId = rawFile._id;
+				});
+				db.collection('rawentries').insertMany(
+					fileContent.entries, {}, (err, result) => {
+						if (err) {
+							reject(err);
+						}
+						resolve({rawFile, fileContent});
+				});
+			});
+		};
+
+		insertFile().then(
+			readFile
+		).then(
+			insertHeader
+		).then(
+			insertModel
+		).then(
+			insertEntries
+		).then((result) => {resolve(result)}
+		).catch((err) => {
+				reject(err);
+		});
 	});
 };
 
