@@ -70,6 +70,9 @@ const ingest = (db) => {
 	});
 };
 
+/**
+ * Ingests a single json log file
+ */
 const ingestFile = (db, file, jsonLogPath) => {
 	return new Promise((resolve, reject) => {
 		const insertFile = () => {
@@ -81,6 +84,9 @@ const ingestFile = (db, file, jsonLogPath) => {
 			});
 		};
 
+		/**
+		 * Reads an entire json log file
+		 */
 		const readFile = (rawFileId) => {
 			return new Promise((resolve, reject) => {
 				// TODO: Move to a streaming JSON file reader
@@ -93,6 +99,9 @@ const ingestFile = (db, file, jsonLogPath) => {
 			});
 		};
 
+		/**
+		 * Writes a json log file's header to the db
+		 */
 		const insertHeader = ({rawFileId, fileContent}) => {
 			return new Promise((resolve, reject) => {
 				const toInsert = Object.assign(
@@ -107,6 +116,9 @@ const ingestFile = (db, file, jsonLogPath) => {
 			});
 		};
 
+		/**
+		 * Writes a json log file's "model" to the db
+		 */
 		const insertModel = ({rawFileId, fileContent}) => {
 			return new Promise((resolve, reject) => {
 				const toInsert = Object.assign(
@@ -121,6 +133,9 @@ const ingestFile = (db, file, jsonLogPath) => {
 			});
 		};
 
+		/**
+		 * Writes each "entry" from a json log file to the db
+		 */
 		const insertEntries = ({rawFileId, fileContent}) => {
 			return new Promise((resolve, reject) => {
 				fileContent.entries.forEach((entry) => {
